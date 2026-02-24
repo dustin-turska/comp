@@ -1,6 +1,6 @@
 'use client';
 
-import { bulkUploadPoliciesAction } from '@/actions/policies/bulk-upload-policies';
+import { usePolicyActions } from '@/hooks/use-policies';
 import { useMediaQuery } from '@comp/ui/hooks';
 import {
   Button,
@@ -18,7 +18,6 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Close, DocumentPdf, Upload } from '@trycompai/design-system/icons';
-import { useAction } from 'next-safe-action/hooks';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -116,32 +115,9 @@ interface BulkUploadFormProps {
 function BulkUploadForm({ onClose }: BulkUploadFormProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const bulkUpload = useAction(bulkUploadPoliciesAction, {
-    onSuccess: ({ data }) => {
-      if (!data) return;
-      const { summary } = data;
-      if (summary) {
-        if (summary.failed === 0) {
-          toast.success(
-            `Successfully created ${summary.succeeded} ${summary.succeeded === 1 ? 'policy' : 'policies'}`,
-          );
-        } else {
-          toast.warning(
-            `Created ${summary.succeeded} of ${summary.total} policies. ${summary.failed} failed.`,
-          );
-        }
-      }
-      setFiles([]);
-      onClose();
-    },
-    onError: () => {
-      toast.error('Failed to upload policies');
-    },
-  });
-
-  const isUploading = bulkUpload.status === 'executing';
+  const { bulkUpload } = usePolicyActions();
 
   const addFiles = useCallback(
     (newFiles: FileList | File[]) => {
@@ -201,15 +177,34 @@ function BulkUploadForm({ onClose }: BulkUploadFormProps) {
   const handleUpload = async () => {
     if (files.length === 0) return;
 
-    const fileEntries = await Promise.all(
-      files.map(async (file) => ({
-        fileName: file.name,
-        fileType: file.type,
-        fileData: await fileToBase64(file),
-      })),
-    );
+    setIsUploading(true);
+    try {
+      const fileEntries = await Promise.all(
+        files.map(async (file) => ({
+          fileName: file.name,
+          fileType: file.type,
+          fileData: await fileToBase64(file),
+        })),
+      );
 
-    bulkUpload.execute({ files: fileEntries });
+      const result = await bulkUpload(fileEntries);
+      const { summary } = result;
+      if (summary.failed === 0) {
+        toast.success(
+          `Successfully created ${summary.succeeded} ${summary.succeeded === 1 ? 'policy' : 'policies'}`,
+        );
+      } else {
+        toast.warning(
+          `Created ${summary.succeeded} of ${summary.total} policies. ${summary.failed} failed.`,
+        );
+      }
+      setFiles([]);
+      onClose();
+    } catch {
+      toast.error('Failed to upload policies');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

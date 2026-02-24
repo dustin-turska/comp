@@ -1,6 +1,6 @@
 'use client';
 
-import { bulkDeletePoliciesAction } from '@/actions/policies/bulk-delete-policies';
+import { usePolicyActions } from '@/hooks/use-policies';
 import { Checkbox } from '@comp/ui/checkbox';
 import type { Policy, PolicyStatus } from '@db';
 import {
@@ -24,7 +24,6 @@ import {
   Stack,
 } from '@trycompai/design-system';
 import { Close, Edit, Search, TrashCan } from '@trycompai/design-system/icons';
-import { useAction } from 'next-safe-action/hooks';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PoliciesTableDS } from './PoliciesTableDS';
@@ -50,31 +49,14 @@ export function PolicyFilters({ policies }: PolicyFiltersProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const { bulkDelete } = usePolicyActions();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (!selectable) {
       setSelectedIds(new Set());
     }
   }, [selectable]);
-
-  const bulkDelete = useAction(bulkDeletePoliciesAction, {
-    onSuccess: ({ data }) => {
-      if (data?.success) {
-        toast.success(
-          `Deleted ${data.deletedCount} ${data.deletedCount === 1 ? 'policy' : 'policies'}`,
-        );
-        setSelectedIds(new Set());
-        setSelectable(false);
-        setIsDeleteDialogOpen(false);
-      } else {
-        toast.error(data?.error ?? 'Failed to delete policies');
-      }
-    },
-    onError: () => {
-      toast.error('Failed to delete policies');
-    },
-  });
-
-  const isDeleting = bulkDelete.status === 'executing';
 
   const departments = useMemo(() => {
     const depts = new Set<string>();
@@ -151,8 +133,21 @@ export function PolicyFilters({ policies }: PolicyFiltersProps) {
     }
   };
 
-  const handleBulkDelete = () => {
-    bulkDelete.execute({ policyIds: Array.from(selectedIds) });
+  const handleBulkDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await bulkDelete(Array.from(selectedIds));
+      toast.success(
+        `Deleted ${result.deletedCount} ${result.deletedCount === 1 ? 'policy' : 'policies'}`,
+      );
+      setSelectedIds(new Set());
+      setSelectable(false);
+      setIsDeleteDialogOpen(false);
+    } catch {
+      toast.error('Failed to delete policies');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleExitEditMode = () => {

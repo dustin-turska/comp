@@ -2,13 +2,13 @@
 
 import { BulkUploadPoliciesSheet } from '@/components/sheets/bulk-upload-policies-sheet';
 import { CreatePolicySheet } from '@/components/sheets/create-policy-sheet';
-import { downloadAllPolicies } from '@/lib/pdf-generator';
+import { usePolicyActions } from '@/hooks/use-policies';
 import { Add, Download, Upload } from '@carbon/icons-react';
 import type { Policy } from '@db';
 import { Button, HStack } from '@trycompai/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { getLogsForPolicy } from '../../[policyId]/data';
+import { toast } from 'sonner';
 
 interface PolicyPageActionsProps {
   policies: Policy[];
@@ -19,18 +19,15 @@ export function PolicyPageActions({ policies }: PolicyPageActionsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const { downloadAll } = usePolicyActions();
 
   const handleDownloadAll = async () => {
     setIsDownloadingAll(true);
     try {
-      const logsEntries = await Promise.all(
-        policies.map(async (policy) => {
-          const logs = await getLogsForPolicy(policy.id);
-          return [policy.id, logs] as const;
-        }),
-      );
-      const policyLogs = Object.fromEntries(logsEntries);
-      downloadAllPolicies(policies, policyLogs);
+      const result = await downloadAll();
+      window.open(result.downloadUrl, '_blank');
+    } catch {
+      toast.error('Failed to generate PDF bundle');
     } finally {
       setIsDownloadingAll(false);
     }
