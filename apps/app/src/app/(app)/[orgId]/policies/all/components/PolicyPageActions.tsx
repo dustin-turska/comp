@@ -1,8 +1,9 @@
 'use client';
 
+import { BulkUploadPoliciesSheet } from '@/components/sheets/bulk-upload-policies-sheet';
 import { CreatePolicySheet } from '@/components/sheets/create-policy-sheet';
 import { downloadAllPolicies } from '@/lib/pdf-generator';
-import { Add, Download } from '@carbon/icons-react';
+import { Add, Download, Upload } from '@carbon/icons-react';
 import type { Policy } from '@db';
 import { Button, HStack } from '@trycompai/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -41,6 +42,12 @@ export function PolicyPageActions({ policies }: PolicyPageActionsProps) {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleBulkUpload = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('bulk-upload-policies', 'true');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   return (
     <>
       <HStack gap="sm" align="center">
@@ -54,11 +61,15 @@ export function PolicyPageActions({ policies }: PolicyPageActionsProps) {
             Download All
           </Button>
         )}
+        <Button variant="outline" iconLeft={<Upload />} onClick={handleBulkUpload}>
+          Upload Policies
+        </Button>
         <Button iconLeft={<Add />} onClick={handleCreatePolicy}>
           Create Policy
         </Button>
       </HStack>
       <CreatePolicySheet />
+      <BulkUploadPoliciesSheet />
     </>
   );
 }
