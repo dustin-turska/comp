@@ -142,6 +142,29 @@ const tabletopExerciseDataSchema = z.object({
   evidenceFile: evidenceFormFileSchema.optional(),
 });
 
+const securityIncidentTrackerTimelineRowSchema = z.object({
+  timestamp: requiredTrimmed('Timestamp'),
+  actionEvent: requiredTrimmed('Action / Event'),
+  author: requiredTrimmed('Author'),
+  notesLinks: z.string().trim().optional(),
+});
+
+const securityIncidentTrackerDataSchema = z.object({
+  submissionDate: required('Submission date'),
+  incidentId: requiredTrimmed('Incident ID'),
+  severityLevel: z.enum(['sev-0', 'sev-1', 'sev-2', 'sev-3'], {
+    error: 'Please select a severity level',
+  }),
+  incidentCommander: requiredTrimmed('Incident Commander'),
+  scribe: z.string().trim().optional(),
+  incidentStatus: z.enum(['investigating', 'identified', 'monitoring', 'resolved'], {
+    error: 'Please select a status',
+  }),
+  timelineEntries: z
+    .array(securityIncidentTrackerTimelineRowSchema)
+    .min(1, 'At least one timeline entry is required'),
+});
+
 export const evidenceFormSubmissionSchemaMap = {
   meeting: meetingDataSchema,
   'board-meeting': meetingDataSchema,
@@ -155,4 +178,5 @@ export const evidenceFormSubmissionSchemaMap = {
   'employee-performance-evaluation': employeePerformanceEvaluationDataSchema,
   'network-diagram': networkDiagramDataSchema,
   'tabletop-exercise': tabletopExerciseDataSchema,
+  'security-incident-tracker': securityIncidentTrackerDataSchema,
 } as const satisfies Record<EvidenceFormType, z.ZodTypeAny>;

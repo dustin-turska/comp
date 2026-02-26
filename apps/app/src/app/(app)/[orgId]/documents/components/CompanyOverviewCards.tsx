@@ -65,14 +65,12 @@ function StatusBadge({
       ? isMeetingTodo(statuses)
       : isTodo(statuses[form.type]?.lastSubmittedAt ?? null);
 
-  const statusBadge = showTodo ? (
-    form.optional ? (
-      <Badge variant="outline">Optional</Badge>
-    ) : (
-      <span className="inline-flex items-center rounded-sm bg-amber-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wider leading-none text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
-        Todo
-      </span>
-    )
+  const statusBadge = form.optional ? (
+    <Badge variant="outline">Optional</Badge>
+  ) : showTodo ? (
+    <span className="inline-flex items-center rounded-sm bg-amber-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wider leading-none text-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+      Todo
+    </span>
   ) : (
     <span className="inline-flex items-center rounded-sm bg-green-100 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wider leading-none text-green-800 dark:bg-green-950/30 dark:text-green-400">
       Complete

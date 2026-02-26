@@ -573,6 +573,103 @@ Injects: At 10:30, media contacts the company about the incident.`,
       },
     ],
   },
+  'security-incident-tracker': {
+    type: 'security-incident-tracker',
+    title: 'Security Incident Tracker',
+    description:
+      'Log and track security incidents from detection through resolution. Capture metadata, severity, ownership, and a chronological timeline of response actions.',
+    category: 'Security',
+    submissionDateMode: 'custom',
+    portalAccessible: false,
+    optional: true,
+    fields: [
+      {
+        key: 'incidentId',
+        label: 'Incident ID',
+        type: 'text',
+        required: true,
+        description: 'A unique identifier for this incident',
+        placeholder: 'e.g. INC-2026-042',
+      },
+      {
+        key: 'severityLevel',
+        label: 'Severity Level',
+        type: 'select',
+        required: true,
+        description: 'Categorize the severity of the incident',
+        options: [
+          { label: 'SEV-0 (Critical)', value: 'sev-0' },
+          { label: 'SEV-1 (High)', value: 'sev-1' },
+          { label: 'SEV-2 (Medium)', value: 'sev-2' },
+          { label: 'SEV-3 (Low)', value: 'sev-3' },
+        ],
+      },
+      {
+        key: 'incidentCommander',
+        label: 'Incident Commander (IC)',
+        type: 'member-select',
+        required: true,
+        description: 'The person leading the incident response',
+        placeholder: 'Search or type a name...',
+      },
+      {
+        key: 'scribe',
+        label: 'Scribe',
+        type: 'member-select',
+        required: false,
+        description: 'The person dedicated to updating the incident log',
+        placeholder: 'Search or type a name...',
+      },
+      {
+        key: 'incidentStatus',
+        label: 'Status',
+        type: 'select',
+        required: true,
+        description: 'Current status of the incident',
+        options: [
+          { label: 'Investigating', value: 'investigating' },
+          { label: 'Identified', value: 'identified' },
+          { label: 'Monitoring', value: 'monitoring' },
+          { label: 'Resolved', value: 'resolved' },
+        ],
+      },
+      {
+        key: 'timelineEntries',
+        label: 'Chronological Timeline',
+        type: 'matrix',
+        required: true,
+        description:
+          'Log every action and event with a UTC timestamp. This is the heart of the incident record.',
+        addRowLabel: 'Add timeline entry',
+        columns: [
+          {
+            key: 'timestamp',
+            label: 'Timestamp (UTC)',
+            required: true,
+            placeholder: 'e.g. 2026-02-26 14:05',
+          },
+          {
+            key: 'actionEvent',
+            label: 'Action / Event',
+            required: true,
+            placeholder: 'e.g. Alert triggered: 500 errors spiking in us-east-1',
+          },
+          {
+            key: 'author',
+            label: 'Author',
+            required: true,
+            placeholder: 'e.g. @JaneDoe or System',
+          },
+          {
+            key: 'notesLinks',
+            label: 'Notes / Links',
+            required: false,
+            placeholder: 'e.g. Link to Grafana dashboard, Slack channel #inc-123',
+          },
+        ],
+      },
+    ],
+  },
 };
 
 export const evidenceFormDefinitionList = Object.values(evidenceFormDefinitions);

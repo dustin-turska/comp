@@ -92,6 +92,14 @@ function getMatrixRowCount(value: unknown): number {
   return value.filter((row) => row && typeof row === 'object').length;
 }
 
+function getMatrixFirstCellValue(value: unknown, columnKey: string): string {
+  if (!Array.isArray(value)) return '';
+  const firstRow = value.find((row) => row && typeof row === 'object');
+  if (!firstRow) return '';
+  const cell = (firstRow as Record<string, unknown>)[columnKey];
+  return typeof cell === 'string' ? cell : '';
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -424,10 +432,17 @@ export function CompanyFormPageClient({
                 const summaryValue = summaryField
                   ? String(submission.data[summaryField.key] ?? '')
                   : '';
-                const matrixSummary = matrixSummaryField
-                  ? `${getMatrixRowCount(submission.data[matrixSummaryField.key])} row(s)`
+                const matrixFirstCell = matrixSummaryField
+                  ? getMatrixFirstCellValue(
+                      submission.data[matrixSummaryField.key],
+                      matrixSummaryField.columns?.[1]?.key ?? matrixSummaryField.columns?.[0]?.key ?? '',
+                    )
                   : '';
-                const rowSummary = summaryField ? truncate(summaryValue, 80) : matrixSummary;
+                const matrixSummary = matrixFirstCell
+                  || (matrixSummaryField
+                    ? `${getMatrixRowCount(submission.data[matrixSummaryField.key])} row(s)`
+                    : '');
+                const rowSummary = summaryField ? truncate(summaryValue, 80) : truncate(matrixSummary, 80);
 
                 const submissionFormType = submission.formType ?? formType;
 

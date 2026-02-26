@@ -13,4 +13,6 @@ export const conciseFormDescriptions: Record<string, string> = {
   'network-diagram': 'Upload or link to a current network diagram.',
   'tabletop-exercise':
     'Conduct a tabletop exercise and document findings, attendees, and action items.',
+  'security-incident-tracker':
+    'Log and track security incidents with severity, ownership, and a chronological response timeline.',
 };

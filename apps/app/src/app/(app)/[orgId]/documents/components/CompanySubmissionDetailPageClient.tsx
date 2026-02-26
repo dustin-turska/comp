@@ -180,7 +180,7 @@ export function CompanySubmissionDetailPageClient({
 
   const submission = data.submission;
   const fields = data.form.fields.filter((field) => field.key !== 'submissionDate');
-  const compactFields = fields.filter((f) => f.type === 'text' || f.type === 'date');
+  const compactFields = fields.filter((f) => f.type === 'text' || f.type === 'date' || f.type === 'member-select');
   const selectFields = fields.filter((f) => f.type === 'select');
   const textareaFields = fields.filter((f) => f.type === 'textarea');
   const fileFields = fields.filter((f) => f.type === 'file');
@@ -303,16 +303,16 @@ export function CompanySubmissionDetailPageClient({
             {matrixFields.map((field) => {
               const rows = normalizeMatrixRows(submission.data[field.key]);
               return (
-                <div key={field.key} className="grid grid-cols-1 gap-2 p-4 lg:grid-cols-3">
+                <div key={field.key} className="space-y-2 p-4">
                   <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     {field.label}
                   </div>
-                  <div className="lg:col-span-2 text-sm">
-                    {rows.length === 0 ? (
-                      <Text size="sm" variant="muted">
-                        —
-                      </Text>
-                    ) : (
+                  {rows.length === 0 ? (
+                    <Text size="sm" variant="muted">
+                      —
+                    </Text>
+                  ) : (
+                    <div className="overflow-x-auto">
                       <Table variant="bordered">
                         <TableHeader>
                           <TableRow>
@@ -337,8 +337,8 @@ export function CompanySubmissionDetailPageClient({
                           ))}
                         </TableBody>
                       </Table>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

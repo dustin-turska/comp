@@ -13,6 +13,7 @@ export const evidenceFormTypeSchema = z.enum([
   'employee-performance-evaluation',
   'network-diagram',
   'tabletop-exercise',
+  'security-incident-tracker',
 ]);
 
 export type EvidenceFormType = z.infer<typeof evidenceFormTypeSchema>;

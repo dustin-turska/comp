@@ -12,6 +12,7 @@ import {
 } from '@/app/(app)/[orgId]/documents/forms';
 import type { EvidenceFormAnalysisResult } from '@/app/api/evidence-forms/analyze/route';
 import { FileUploader } from '@/components/file-uploader';
+import { useOrganizationMembers } from '@/hooks/use-organization-members';
 import { api } from '@/lib/api-client';
 import { meetingFields } from '@comp/company';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,9 +29,24 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Text,
   Textarea,
 } from '@trycompai/design-system';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@comp/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@comp/ui/popover';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -84,6 +100,17 @@ export function CompanySubmissionWizard({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisSkipped, setAnalysisSkipped] = useState(false);
+  const [memberSelectOpen, setMemberSelectOpen] = useState<Record<string, boolean>>({});
+
+  const { members: orgMembers } = useOrganizationMembers();
+  const memberOptions = useMemo(
+    () =>
+      (orgMembers ?? []).map((m) => ({
+        value: m.user.name || m.user.email,
+        label: m.user.name || m.user.email,
+      })),
+    [orgMembers],
+  );
 
   const activeFormDefinition = useMemo(() => {
     if (!isMeeting) return evidenceFormDefinitions[formType];
@@ -113,7 +140,7 @@ export function CompanySubmissionWizard({
   const compactFields = useMemo(() => {
     const compact = visibleFields.filter(
       (f) =>
-        (f.type === 'text' || f.type === 'date' || f.type === 'select') &&
+        (f.type === 'text' || f.type === 'date' || f.type === 'select' || f.type === 'member-select') &&
         !step2OnlyFieldKeys.includes(f.key),
     );
     const dateFields = compact.filter((f) => f.type === 'date');
@@ -524,6 +551,60 @@ export function CompanySubmissionWizard({
                               ))}
                             </SelectContent>
                           </Select>
+                        )}
+
+                        {field.type === 'member-select' && (
+                          <Popover
+                            open={memberSelectOpen[field.key] ?? false}
+                            onOpenChange={(open) =>
+                              setMemberSelectOpen((prev) => ({ ...prev, [field.key]: open }))
+                            }
+                          >
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                role="combobox"
+                                aria-expanded={memberSelectOpen[field.key] ?? false}
+                                className="flex h-9 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              >
+                                <span className={controllerField.value ? '' : 'text-muted-foreground'}>
+                                  {String(controllerField.value ?? '') || field.placeholder || 'Select a person...'}
+                                </span>
+                                <svg width="12" height="12" viewBox="0 0 12 12" className="ml-2 shrink-0 opacity-50"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                              <Command>
+                                <CommandInput
+                                  placeholder={field.placeholder ?? 'Search members...'}
+                                  onValueChange={(search) => {
+                                    controllerField.onChange(search);
+                                  }}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>
+                                    <span className="text-muted-foreground text-xs">
+                                      Type a name or select from the list
+                                    </span>
+                                  </CommandEmpty>
+                                  <CommandGroup>
+                                    {memberOptions.map((option) => (
+                                      <CommandItem
+                                        key={option.value}
+                                        value={option.value}
+                                        onSelect={(val) => {
+                                          controllerField.onChange(val);
+                                          setMemberSelectOpen((prev) => ({ ...prev, [field.key]: false }));
+                                        }}
+                                      >
+                                        {option.label}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         )}
                         <FieldError errors={[fieldState.error]} />
                       </Field>
@@ -1018,50 +1099,61 @@ export function CompanySubmissionWizard({
                     </div>
                   </div>
                 )}
-                {visibleFields.map((field) => (
-                  <div key={field.key} className="grid grid-cols-1 gap-2 p-4 lg:grid-cols-3">
-                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      {field.label}
-                    </div>
-                    <div className="lg:col-span-2 text-sm whitespace-pre-wrap wrap-anywhere">
-                      {isMatrixField(field)
-                        ? (() => {
-                            const rows = normalizeMatrixRows(
-                              values[field.key as keyof typeof values],
-                            );
-                            if (rows.length === 0) return '—';
+                {visibleFields.map((field) =>
+                  isMatrixField(field) ? (
+                    <div key={field.key} className="space-y-2 p-4">
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        {field.label}
+                      </div>
+                      {(() => {
+                        const rows = normalizeMatrixRows(
+                          values[field.key as keyof typeof values],
+                        );
+                        if (rows.length === 0) return <span className="text-sm">—</span>;
 
-                            return (
-                              <div className="space-y-3">
+                        return (
+                          <div className="overflow-x-auto">
+                            <Table variant="bordered">
+                              <TableHeader>
+                                <TableRow>
+                                  {field.columns.map((column) => (
+                                    <TableHead key={`${field.key}-review-head-${column.key}`}>
+                                      {column.label}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
                                 {rows.map((row, rowIndex) => (
-                                  <div
-                                    key={`${field.key}-review-${rowIndex}`}
-                                    className="rounded-md border border-border p-3"
-                                  >
-                                    <Text size="sm" weight="medium">
-                                      Row {rowIndex + 1}
-                                    </Text>
-                                    <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
-                                      {field.columns.map((column) => (
-                                        <div key={`${field.key}-review-${rowIndex}-${column.key}`}>
-                                          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                                            {column.label}
-                                          </div>
-                                          <div className="text-sm whitespace-pre-wrap wrap-anywhere">
-                                            {row[column.key] || '—'}
-                                          </div>
+                                  <TableRow key={`${field.key}-review-${rowIndex}`}>
+                                    {field.columns.map((column) => (
+                                      <TableCell
+                                        key={`${field.key}-review-${rowIndex}-${column.key}`}
+                                      >
+                                        <div className="whitespace-pre-wrap">
+                                          {row[column.key] || '—'}
                                         </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
                                 ))}
-                              </div>
-                            );
-                          })()
-                        : renderSubmissionValue(values[field.key as keyof typeof values], field)}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        );
+                      })()}
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    <div key={field.key} className="grid grid-cols-1 gap-2 p-4 lg:grid-cols-3">
+                      <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        {field.label}
+                      </div>
+                      <div className="lg:col-span-2 text-sm whitespace-pre-wrap wrap-anywhere">
+                        {renderSubmissionValue(values[field.key as keyof typeof values], field)}
+                      </div>
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           </div>

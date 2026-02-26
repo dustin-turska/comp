@@ -11,7 +11,7 @@ export type EvidenceFormMatrixColumnDefinition = {
 export type EvidenceFormFieldDefinition = {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'date' | 'select' | 'file' | 'matrix';
+  type: 'text' | 'textarea' | 'date' | 'select' | 'file' | 'matrix' | 'member-select';
   required: boolean;
   placeholder?: string;
   description?: string;
